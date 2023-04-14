@@ -4,7 +4,6 @@ from chessBoard import ChessBoard
 
 
 SOLID_BLUE = (50,50,200,127)
-# BG_COLOR = SOLID_BLUE
 BG_COLOR = (4,84,4)
 
 # CONSTANTS
@@ -15,8 +14,8 @@ selector = 1
 player = 1
 
 pygame.init()
-# screen = pygame.display.set_mode((800,450), pygame.RESIZABLE)
-screen = pygame.display.set_mode((0,0),pygame.FULLSCREEN)
+screen = pygame.display.set_mode((800,450), pygame.RESIZABLE)
+# screen = pygame.display.set_mode((0,0),pygame.FULLSCREEN)
 pygame.display.set_caption("Chess")
 pygame.display.set_icon(pygame.image.load('assests/W_QUEEN.png'))
 turn_font = pygame.font.Font(pygame.font.get_default_font(), 26)
@@ -49,12 +48,12 @@ def mouse_click(event):
             selector *= -1
 
 def turn_indicator(turn_text):
-    turn_surface = pygame.surface.Surface((60,SCREEN_HEIGHT), pygame.SRCALPHA)
+    turn_surface = pygame.surface.Surface((int(SCREEN_WIDTH*0.05),SCREEN_HEIGHT), pygame.SRCALPHA)
     turn_surface.fill(SOLID_BLUE)
     text = turn_font.render(turn_text, True, (255,255,255))
     text = pygame.transform.rotate(text, 90)
     text_rect = text.get_rect()
-    text_rect.center = (30,SCREEN_HEIGHT//2)
+    text_rect.center = (int(SCREEN_WIDTH*0.05)//2,SCREEN_HEIGHT//2)
     turn_surface.blit(text,text_rect)
     return turn_surface
 
@@ -68,13 +67,16 @@ while(True):
             mouse_click(event)
         elif event.type == pygame.QUIT:
             sys.exit(0)
+        elif event.type == pygame.WINDOWRESIZED:
+            SCREEN_WIDTH = screen.get_rect().width
+            SCREEN_HEIGHT = screen.get_rect().height
+            board.resized(SCREEN_WIDTH, SCREEN_HEIGHT)
 
     screen.fill(BG_COLOR)
     clearBg()
 
     if curr_player != player:
         curr_player = player
-        print(f'Your Move {player_name[player]}')
 
     screen.blit(turn_indicator(player_name[player]),(0,0))
     board.draw_board()

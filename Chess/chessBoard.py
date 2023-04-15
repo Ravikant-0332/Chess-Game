@@ -197,63 +197,70 @@ class ChessBoard:
                 self.move_from = self.move_to
                 self.move_to = []
                 return status
-
-        update_piece = None
-        if self.grid[move_from[0]][move_from[1]] != 0 and self.grid[move_from[0]][move_from[1]][:5] == player:
-            if self.grid[move_to[0]][move_to[1]] == 0:
-                """  Checking for Pawn Upgrade """
-                piece_name = self.grid[move_from[0]][move_from[1]]
-                if piece_name[5:] == " pawn":
-                    if piece_name[:5] == "black" and move_to[0] == 7:
-                        # SHOW BLACK PIECES SELECTOR
-                        update_piece = self._pawn_update_selector("black")
-                    elif piece_name[:5] == "white" and move_to[0] == 0:
-                        # SHOW WHITE PIECES SELECTOR
-                        update_piece = self._pawn_update_selector("white")
-
-                self.grid[move_to[0]][move_to[1]] = self.grid[move_from[0]][move_from[1]]
-                self.grid[move_from[0]][move_from[1]] = 0
-
-                if update_piece != None:
-                    self.grid[move_to[0]][move_to[1]] = update_piece
-
+            # Pawn's Move
+            elif temp_piece[6:] == 'pawn' and temp_piece[:5] == player:
+                status = self.pawn_move(player, move_from, move_to)
                 self.move_from = self.move_to
                 self.move_to = []
-                return True
+                return status
 
-            elif self.grid[move_to[0]][move_to[1]][:5] != player:
-                """  Checking for Pawn Upgrade """
-                piece_name = self.grid[move_from[0]][move_from[1]]
-                if piece_name[5:] == " pawn":
-                    if piece_name[:5] == "black" and move_to[0] == 7:
-                        # SHOW BLACK PIECES SELECTOR
-                        update_piece = self._pawn_update_selector("black")
-                    elif piece_name[:5] == "white" and move_to[0] == 0:
-                        # SHOW WHITE PIECES SELECTOR
-                        update_piece = self._pawn_update_selector("white")
-
-                if self.grid[move_to[0]][move_to[1]][:5] == 'black':
-                    self.b_dead_pieces.append(self.grid[move_to[0]][move_to[1]])
-                    self.grid[move_to[0]][move_to[1]] = self.grid[move_from[0]][move_from[1]]
-                    self.grid[move_from[0]][move_from[1]] = 0
-
-                elif self.grid[move_to[0]][move_to[1]][:5] == 'white':
-                    self.w_dead_pieces.append(self.grid[move_to[0]][move_to[1]])
-                    self.grid[move_to[0]][move_to[1]] = self.grid[move_from[0]][move_from[1]]
-                    self.grid[move_from[0]][move_from[1]] = 0
-
-                if update_piece != None:
-                    self.grid[move_to[0]][move_to[1]] = update_piece
-
-                self.move_from = self.move_to
-                self.move_to = []
-
-                return True
+        # update_piece = None
+        # if self.grid[move_from[0]][move_from[1]] != 0 and self.grid[move_from[0]][move_from[1]][:5] == player:
+        #     if self.grid[move_to[0]][move_to[1]] == 0:
+        #         """  Checking for Pawn Upgrade """
+        #         piece_name = self.grid[move_from[0]][move_from[1]]
+        #         if piece_name[5:] == " pawn":
+        #             if piece_name[:5] == "black" and move_to[0] == 7:
+        #                 # SHOW BLACK PIECES SELECTOR
+        #                 update_piece = self._pawn_update_selector("black")
+        #             elif piece_name[:5] == "white" and move_to[0] == 0:
+        #                 # SHOW WHITE PIECES SELECTOR
+        #                 update_piece = self._pawn_update_selector("white")
+        #
+        #         self.grid[move_to[0]][move_to[1]] = self.grid[move_from[0]][move_from[1]]
+        #         self.grid[move_from[0]][move_from[1]] = 0
+        #
+        #         if update_piece != None:
+        #             self.grid[move_to[0]][move_to[1]] = update_piece
+        #
+        #         self.move_from = self.move_to
+        #         self.move_to = []
+        #         return True
+        #
+        #     elif self.grid[move_to[0]][move_to[1]][:5] != player:
+        #         """  Checking for Pawn Upgrade """
+        #         piece_name = self.grid[move_from[0]][move_from[1]]
+        #         if piece_name[5:] == " pawn":
+        #             if piece_name[:5] == "black" and move_to[0] == 7:
+        #                 # SHOW BLACK PIECES SELECTOR
+        #                 update_piece = self._pawn_update_selector("black")
+        #             elif piece_name[:5] == "white" and move_to[0] == 0:
+        #                 # SHOW WHITE PIECES SELECTOR
+        #                 update_piece = self._pawn_update_selector("white")
+        #
+        #         if self.grid[move_to[0]][move_to[1]][:5] == 'black':
+        #             self.b_dead_pieces.append(self.grid[move_to[0]][move_to[1]])
+        #             self.grid[move_to[0]][move_to[1]] = self.grid[move_from[0]][move_from[1]]
+        #             self.grid[move_from[0]][move_from[1]] = 0
+        #
+        #         elif self.grid[move_to[0]][move_to[1]][:5] == 'white':
+        #             self.w_dead_pieces.append(self.grid[move_to[0]][move_to[1]])
+        #             self.grid[move_to[0]][move_to[1]] = self.grid[move_from[0]][move_from[1]]
+        #             self.grid[move_from[0]][move_from[1]] = 0
+        #
+        #         if update_piece != None:
+        #             self.grid[move_to[0]][move_to[1]] = update_piece
+        #
+        #         self.move_from = self.move_to
+        #         self.move_to = []
+        #
+        #         return True
         self.move_from = self.move_to
         self.move_to = []
         return False
 
     def _pawn_update_selector(self, player):
+        self.draw_board()
         x_min, y_min = self.pawn_updater_position
         local_surface = pygame.surface.Surface((self.box_size, 4 * self.box_size + 1))
         inactive_layer = pygame.surface.Surface((self.width, self.height), pygame.SRCALPHA)
@@ -467,4 +474,45 @@ class ChessBoard:
 
     def queen_move(self, player, move_from, move_to):
         return self.rook_move(player, move_from, move_to) or self.bishop_move(player, move_from, move_to)
+
+    def pawn_move(self, player, move_from, move_to):
+        dist = (move_from[0]-move_to[0])**2+(move_from[1]-move_to[1])**2
+        if dist == 1:
+            if self.grid[move_to[0]][move_to[1]]==0:
+                if (move_to[0]-move_from[0]==1 and player=='black') or (move_to[0]-move_from[0]==-1 and player=='white'):
+                    temp_loc = move_to
+                    self.grid[move_to[0]][move_to[1]] = self.grid[move_from[0]][move_from[1]]
+                    self.grid[move_from[0]][move_from[1]] = 0
+                    if player == "black" and temp_loc[0] == 7:
+                        # SHOW BLACK PIECES SELECTOR
+                        self.grid[temp_loc[0]][temp_loc[1]] = self._pawn_update_selector("black")
+                    elif player == "white" and temp_loc[0] == 0:
+                        # SHOW WHITE PIECES SELECTOR
+                        self.grid[temp_loc[0]][temp_loc[1]] = self._pawn_update_selector("white")
+                    return True
+
+        elif dist == 2:
+            if self.grid[move_to[0]][move_to[1]]!=0 and self.grid[move_to[0]][move_to[1]][:5]!=player:
+                if player == 'white':
+                    self.b_dead_pieces.append(self.grid[move_to[0]][move_to[1]])
+                else:
+                    self.w_dead_pieces.append(self.grid[move_to[0]][move_to[1]])
+                temp_loc = move_to
+                self.grid[move_to[0]][move_to[1]] = self.grid[move_from[0]][move_from[1]]
+                self.grid[move_from[0]][move_from[1]] = 0
+                if player == "black" and temp_loc[0] == 7:
+                    # SHOW BLACK PIECES SELECTOR
+                    self.grid[temp_loc[0]][temp_loc[1]] = self._pawn_update_selector("black")
+                elif player == "white" and temp_loc[0] == 0:
+                    # SHOW WHITE PIECES SELECTOR
+                    self.grid[temp_loc[0]][temp_loc[1]] = self._pawn_update_selector("white")
+                return True
+        elif dist == 4:
+            if abs(move_to[0]-move_from[0])==2 and self.grid[move_to[0]][move_to[1]]==0:
+                if (player=='white' and move_from[0]==6 and self.grid[move_from[0]-1][move_from[1]]==0) or (player=='black' and move_from[0]==1 and self.grid[move_from[0]+1][move_from[1]]==0):
+                    self.grid[move_to[0]][move_to[1]] = self.grid[move_from[0]][move_from[1]]
+                    self.grid[move_from[0]][move_from[1]] = 0
+                    return True
+        else:
+            return False
 

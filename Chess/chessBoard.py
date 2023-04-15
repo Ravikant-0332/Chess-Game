@@ -1,3 +1,4 @@
+import random
 import sys
 import pygame
 from pieces import Piece
@@ -19,16 +20,18 @@ class ChessBoard:
         self.move_from = []
         self.move_to = []
 
-        self.primary_color = (255,255,255)
-        self.secondary_color = (4,84,4)
-        self.selection_color = (200,0,0)
+        self.primary_color = (255,255,255,255)
+        self.secondary_color = (4,84,4,255)
+        self.selection_color = [100,100,255]
         self.color = [None, self.primary_color, self.secondary_color]
 
         self.b_dead_pieces = []
         self.w_dead_pieces = []
+        self.valid_moves = []
+        self.pieces_under_attack = []
 
         # SURFACE DECLARATION FOR CHESS BOARD AND DEAD PIECE DISPLAY
-        self.board_surf = pygame.surface.Surface((self.size, self.size))
+        self.board_surf = pygame.surface.Surface((self.size, self.size), pygame.SRCALPHA)
         self.b_dead_piece_surf = pygame.surface.Surface((2*self.box_size, 8*self.box_size), pygame.SRCALPHA)
         self.w_dead_piece_surf = pygame.surface.Surface((2*self.box_size, 8*self.box_size),  pygame.SRCALPHA)
         # self.w_dead_piece_surf.fill(self.primary_color)
@@ -96,24 +99,36 @@ class ChessBoard:
         pygame.draw.rect(self.board_surf, self.secondary_color, (0, 0, self.size, self.size))
         pygame.draw.rect(self.board_surf, self.primary_color, (3, 3, self.size - 6, self.size - 6))
         flag = 1
+
+        # DRAWING CHESS BOARD
         for i in range(8):
             for j in range(8):
                 if flag == 1:
                     pygame.draw.rect(self.board_surf, self.secondary_color, (16 + j * self.box_size, 16 + i * self.box_size, self.box_size, self.box_size))
                 flag*=-1
-                self._get_piece(self.grid[i][j], self.board_surf, (16 + j * self.box_size + self.box_center, 16 + i * self.box_size + self.box_center))
             flag*=-1
-        # BORDER AROUND THE PLAYING REGION
-        pygame.draw.rect(self.board_surf, self.secondary_color, (16, 16, self.size - 32, self.size - 32), width=2)
 
-        """ Displaying Dead Pieces """
-        self._display_dead_piece()
+        # HighLight Valid Moves and Piece Under Attack
+        selector_layer = self._highlight_boxes(self.valid_moves, self.pieces_under_attack)
 
         """ Highlighting Selected Box to Move """
         if self.move_from != []:
             i = self.move_from[0]
             j = self.move_from[1]
-            pygame.draw.rect(self.board_surf,self.selection_color, (16 + j * self.box_size, 16 + i * self.box_size, self.box_size, self.box_size), 2)
+            self._box_over_layer(selector_layer, i, j, self.selection_color);
+        self.board_surf.blit(selector_layer, (16, 16))
+
+        # PLACING PIECES ON THE BOARD
+        for i in range(8):
+            for j in range(8):
+                self._get_piece(self.grid[i][j], self.board_surf,
+                                (16 + j * self.box_size + self.box_center, 16 + i * self.box_size + self.box_center))
+
+        # BORDER AROUND THE PLAYING REGION
+        pygame.draw.rect(self.board_surf, self.secondary_color, (16, 16, self.size - 32, self.size - 32), width=2)
+
+        """ Displaying Dead Pieces """
+        self._display_dead_piece()
 
         # BLITING ALL THE SURFACES ON MAIN SCREEN
         self.screen.blit(self.board_surf, self.board_surf_rect)
@@ -204,57 +219,6 @@ class ChessBoard:
                 self.move_to = []
                 return status
 
-        # update_piece = None
-        # if self.grid[move_from[0]][move_from[1]] != 0 and self.grid[move_from[0]][move_from[1]][:5] == player:
-        #     if self.grid[move_to[0]][move_to[1]] == 0:
-        #         """  Checking for Pawn Upgrade """
-        #         piece_name = self.grid[move_from[0]][move_from[1]]
-        #         if piece_name[5:] == " pawn":
-        #             if piece_name[:5] == "black" and move_to[0] == 7:
-        #                 # SHOW BLACK PIECES SELECTOR
-        #                 update_piece = self._pawn_update_selector("black")
-        #             elif piece_name[:5] == "white" and move_to[0] == 0:
-        #                 # SHOW WHITE PIECES SELECTOR
-        #                 update_piece = self._pawn_update_selector("white")
-        #
-        #         self.grid[move_to[0]][move_to[1]] = self.grid[move_from[0]][move_from[1]]
-        #         self.grid[move_from[0]][move_from[1]] = 0
-        #
-        #         if update_piece != None:
-        #             self.grid[move_to[0]][move_to[1]] = update_piece
-        #
-        #         self.move_from = self.move_to
-        #         self.move_to = []
-        #         return True
-        #
-        #     elif self.grid[move_to[0]][move_to[1]][:5] != player:
-        #         """  Checking for Pawn Upgrade """
-        #         piece_name = self.grid[move_from[0]][move_from[1]]
-        #         if piece_name[5:] == " pawn":
-        #             if piece_name[:5] == "black" and move_to[0] == 7:
-        #                 # SHOW BLACK PIECES SELECTOR
-        #                 update_piece = self._pawn_update_selector("black")
-        #             elif piece_name[:5] == "white" and move_to[0] == 0:
-        #                 # SHOW WHITE PIECES SELECTOR
-        #                 update_piece = self._pawn_update_selector("white")
-        #
-        #         if self.grid[move_to[0]][move_to[1]][:5] == 'black':
-        #             self.b_dead_pieces.append(self.grid[move_to[0]][move_to[1]])
-        #             self.grid[move_to[0]][move_to[1]] = self.grid[move_from[0]][move_from[1]]
-        #             self.grid[move_from[0]][move_from[1]] = 0
-        #
-        #         elif self.grid[move_to[0]][move_to[1]][:5] == 'white':
-        #             self.w_dead_pieces.append(self.grid[move_to[0]][move_to[1]])
-        #             self.grid[move_to[0]][move_to[1]] = self.grid[move_from[0]][move_from[1]]
-        #             self.grid[move_from[0]][move_from[1]] = 0
-        #
-        #         if update_piece != None:
-        #             self.grid[move_to[0]][move_to[1]] = update_piece
-        #
-        #         self.move_from = self.move_to
-        #         self.move_to = []
-        #
-        #         return True
         self.move_from = self.move_to
         self.move_to = []
         return False
@@ -301,6 +265,10 @@ class ChessBoard:
                                 selected_piece = 4
                 elif event.type == pygame.QUIT:
                     sys.exit(0)
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        sys.exit(0)
+
             pygame.display.update()
             if selected_piece != None:
                 break
@@ -309,17 +277,22 @@ class ChessBoard:
 
     def select_box(self,pos, selector,player):
         x,y = self._cell_coordinates_by_point(pos)
+        name = ['', 'white', 'black']
         if x != None and y != None:
             if selector == 1:
                 self.move_from = [x, y]
                 self.move_to = []
+                self.pieces_under_attack = []
+                self.valid_moves = self.get_valid_moves(name[player], self.move_from)
             else:
                 self.move_to = [x, y]
-                name = ['','white', 'black']
                 status = self._move_peice(self.move_from,self.move_to, name[player])
                 if status:
+                    self.valid_moves = []
+                    self.pieces_under_attack = []
                     return True, player*-1
                 else:
+                    self.valid_moves = self.get_valid_moves(name[player], self.move_from)
                     return False, player
             return True, player
         else:
@@ -516,3 +489,165 @@ class ChessBoard:
         else:
             return False
 
+    def _box_over_layer(self, layer_surface, i, j, color, i_offset=0,j_offset=0):
+        d = 0
+        for k in range(255, -1, -255 // (self.box_size // 3)):
+            pygame.draw.rect(layer_surface, color + [k],
+                             (j_offset + j * self.box_size + d,i_offset + i * self.box_size + d, self.box_size - 2 * d, self.box_size - 2 * d),
+                             1)
+            d+=1
+
+    def _highlight_boxes(self, yellow_boxes, red_boxes):
+        highlight_color = [233,255,50]
+        alert_color = [233,0,0]
+        layer_surface = pygame.surface.Surface((int(self.box_size*8), int(self.box_size*8)), pygame.SRCALPHA)
+        for box in yellow_boxes:
+            i,j = box
+            self._box_over_layer(layer_surface, i, j, highlight_color)
+
+        for box in red_boxes:
+            i,j = box
+            self._box_over_layer(layer_surface, i, j, alert_color)
+
+        return layer_surface
+
+    def get_valid_moves(self, player, move_from):
+        i,j = move_from
+        if self.grid[i][j]==0 or self.grid[i][j][:5]!=player:
+            return []
+
+        piece = self.grid[i][j][6:]
+
+        if piece == 'pawn':
+            return self.get_pawn_moves(player, i, j)
+        elif piece == 'knight':
+            return self.get_knight_moves(player, i, j)
+        elif piece == 'bishop':
+            return self.get_bishop_moves(player, i, j)
+        elif piece == 'rook':
+            return self.get_rook_move(player, i, j)
+        elif piece == 'queen':
+            return self.get_queen_move(player, i, j)
+        elif piece == 'king':
+            return self.get_king_moves(player, i, j)
+        return []
+
+    def get_pawn_moves(self, player, i, j):
+        moves = []
+        if player == 'white':
+            if j!=0:
+                if self.grid[i-1][j-1]!=0 and self.grid[i-1][j-1][:5]!=player:
+                    self.pieces_under_attack.append((i-1,j-1))
+            if j!=7:
+                if self.grid[i-1][j+1]!=0 and self.grid[i-1][j+1][:5]!=player:
+                    self.pieces_under_attack.append((i-1,j+1))
+
+            if self.grid[i-1][j]==0:
+                moves.append((i-1,j))
+                if i==6 and self.grid[i-2][j]==0:
+                    moves.append((i-2,j))
+
+        elif player == 'black':
+            if j!=0:
+                if self.grid[i+1][j-1]!=0 and self.grid[i+1][j-1][:5]!=player:
+                    self.pieces_under_attack.append((i+1,j-1))
+            if j!=7:
+                if self.grid[i+1][j+1]!=0 and self.grid[i+1][j+1][:5]!=player:
+                    self.pieces_under_attack.append((i+1,j+1))
+
+            if self.grid[i+1][j]==0:
+                moves.append((i+1,j))
+                if i==1 and self.grid[i+2][j]==0:
+                    moves.append((i+2,j))
+
+        return moves
+
+    def get_knight_moves(self, player, i, j):
+        moves = []
+        temp_points = [
+            (i-2, j-1),
+            (i-2, j+1),
+            (i-1, j-2),
+            (i-1, j+2),
+            (i+2, j-1),
+            (i+2, j+1),
+            (i+1, j-2),
+            (i+1, j+2),
+        ]
+        for point in temp_points:
+            if point[0] in range(0,8) and point[1] in range(0,8):
+                if self.grid[point[0]][point[1]] == 0:
+                    moves.append(point)
+                elif self.grid[point[0]][point[1]][:5]!=player:
+                    self.pieces_under_attack.append(point)
+        return moves
+
+    def _bishop_and_rook_move_helper(self, player, i, j, i_flag, j_flag):
+        moves = []
+        for k in range(1, 8):
+            if i + i_flag*k in range(8) and j + j_flag*k in range(8):
+                if self.grid[i + i_flag*k][j + j_flag*k] == 0:
+                    moves.append((i + i_flag*k, j + j_flag*k))
+                elif self.grid[i + i_flag*k][j + j_flag*k][:5] != player:
+                    self.pieces_under_attack.append((i + i_flag*k, j + j_flag*k))
+                    break
+                else:
+                    break
+            else:
+                break
+        return moves
+
+    def get_bishop_moves(self, player, i, j):
+        moves = []
+        moves+=self._bishop_and_rook_move_helper(player, i, j, -1, -1)
+        moves+=self._bishop_and_rook_move_helper(player, i, j, -1, 1)
+        moves+=self._bishop_and_rook_move_helper(player, i, j, 1, -1)
+        moves+=self._bishop_and_rook_move_helper(player, i, j, 1, 1)
+        return moves
+
+    def get_rook_move(self, player, i, j):
+        moves = []
+        moves += self._bishop_and_rook_move_helper(player, i, j, -1, 0)
+        moves += self._bishop_and_rook_move_helper(player, i, j, 1, 0)
+        moves += self._bishop_and_rook_move_helper(player, i, j, 0, -1)
+        moves += self._bishop_and_rook_move_helper(player, i, j, 0, 1)
+        return moves
+
+    def get_queen_move(self, player, i, j):
+        return self.get_bishop_moves(player, i, j) + self.get_rook_move(player, i, j)
+
+    def get_king_moves(self, player, i, j):
+        moves = []
+        temp_points = [
+            (i-1,j-1),
+            (i-1,j),
+            (i-1,j+1),
+            (i+1,j-1),
+            (i+1,j),
+            (i+1,j+1),
+            (i,j-1),
+            (i,j+1),
+        ]
+
+        for point in temp_points:
+            if point[0] in range(0,8) and point[1] in range(0,8):
+                if self.grid[point[0]][point[1]] == 0:
+                    moves.append(point)
+                elif self.grid[point[0]][point[1]][:5]!=player:
+                    self.pieces_under_attack.append(point)
+
+        if player == 'white':
+            if self.white_castle:
+                if [i,j] == [7,4]:
+                    if self.grid[7][0] == 'white rook' and self.grid[7][1:4] == [0, 0, 0]:
+                        moves.append((7,2))
+                    elif self.grid[7][7] == 'white rook' and self.grid[7][5:7] == [0, 0]:
+                        moves.append((7,6))
+        else:
+            if self.black_castle:
+                if [i, j] == [0, 4]:
+                    if self.grid[0][0] == 'black rook' and self.grid[0][1:4] == [0, 0, 0]:
+                        moves.append((0, 2))
+                    elif self.grid[0][7] == 'black rook' and self.grid[0][5:7] == [0, 0]:
+                        moves.append((0, 6))
+        return moves

@@ -80,4 +80,5 @@ while(True):
 
     screen.blit(turn_indicator(player_name[player]),(0,0))
     board.draw_board()
+    pygame.time.Clock().tick(30)
     pygame.display.update()

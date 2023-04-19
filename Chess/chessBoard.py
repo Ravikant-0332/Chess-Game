@@ -58,6 +58,122 @@ class ChessBoard:
             ['white rook','white knight','white bishop','white queen','white king','white bishop','white knight','white rook',],
         ]
 
+        # self.grid = [
+        #     [0, 0, 0, 0, 0, 0, 0, 0, ],
+        #     ['black pawn', 0, 0, 0, 0, 0, 0, 0, ],
+        #     [0, 0, 0, 0, 'black king', 0, 0, 0, ],
+        #     [0, 0, 0, 0, 0, 0, 0, 0, ],
+        #     [0, 0, 0, 0, 'white pawn', 'white queen', 0, 0, ],
+        #     [0, 0, 0, 0, 0, 0, 0, 0, ],
+        #     [0, 0, 0, 0, 0, 0, 0, 0, ],
+        #     ['white king', 0, 0, 0, 0, 0, 0, 0, ],
+        # ]
+
+        self.black_attacking_cells = [
+            [False, False, False, False, False, False, False, False],
+            [False, False, False, False, False, False, False, False],
+            [True , True , True , True , True , True , True , True ],
+            [False, False, False, False, False, False, False, False],
+            [False, False, False, False, False, False, False, False],
+            [False, False, False, False, False, False, False, False],
+            [False, False, False, False, False, False, False, False],
+            [False, False, False, False, False, False, False, False],
+        ]
+
+        self.white_attacking_cells = [
+            [False, False, False, False, False, False, False, False],
+            [False, False, False, False, False, False, False, False],
+            [False, False, False, False, False, False, False, False],
+            [False, False, False, False, False, False, False, False],
+            [False, False, False, False, False, False, False, False],
+            [True , True , True , True , True , True , True , True ],
+            [False, False, False, False, False, False, False, False],
+            [False, False, False, False, False, False, False, False],
+        ]
+
+    def _get_piece(self, piece, surface, center):
+        img = self.piece.get_piece(piece)
+        if img != None:
+            """ Getting Image of Piece and Displaying it in Current Box """
+            img_rect = img.get_rect()
+            img_rect.center = center
+            surface.blit(img, img_rect)
+
+    def _cell_coordinates_by_point(self,point):
+        X = self.width // 2 - 4 * self.box_size
+        Y = self.height // 2 - 4 * self.box_size
+        x = point[0] - X
+        y = point[1] - Y
+        cor_x,cor_y = None,None
+        for i in range(8):
+            if x in range(int(i*self.box_size),int((i+1)*self.box_size)):
+                cor_y = i
+                break
+        for i in range(8):
+            if y in range(int(i*self.box_size),int((i+1)*self.box_size)):
+                cor_x = i
+                break
+        return cor_x,cor_y
+
+    def _update_white_attack_positions(self):
+        points = []
+        for i in range(8):
+            for j in range(8):
+                if self.grid[i][j]!=0 and self.grid[i][j][:5]=='white':
+                    # if self.grid[i][j][6:]=='knight':
+                    #     m1, m2, m3 = self.get_valid_moves('white', (i, j))
+                    #     points+=m1+m2+m3
+                    #     continue
+                    m1,m2,m3 = self.get_valid_moves('white', (i,j))
+                    if self.grid[i][j][6:]=='pawn':
+                        points += m2 + [(i-1, j-1), (i-1, j+1)]
+                    else:
+                        points += m1+m2+m3
+
+        # REMOVED ALL REPEATATIVE POSITIONS
+        points = list(set(points))
+
+        # Resetting all values to False
+        for i in range(8):
+            for j in range(8):
+                self.white_attacking_cells[i][j] = False
+
+        for i in range(8):
+            for j in range(8):
+                if (i,j) in points and i in range(8) and j in range(8):
+                    self.white_attacking_cells[i][j] = True
+
+    def _update_black_attack_positions(self):
+        points = []
+        for i in range(8):
+            for j in range(8):
+                if self.grid[i][j] != 0 and self.grid[i][j][:5] == 'black':
+                    # if self.grid[i][j][6:]=='knight':
+                    #     m1, m2, m3 = self.get_valid_moves('black', (i, j))
+                    #     points+=m1+m2+m3
+                    #     continue
+                    m1, m2, m3 = self.get_valid_moves('black', (i, j))
+                    if self.grid[i][j][6:] == 'pawn':
+                        points += m2 + [(i+1,j-1), (i+1,j+1)]
+                    else:
+                        points += m1+m2+m3
+
+        # REMOVED ALL REPEATATIVE POSITIONS
+        points = list(set(points))
+        self.black_attacking_cells = [[False]*8]*8
+
+        # Resetting all values to False
+        for i in range(8):
+            for j in range(8):
+                self.black_attacking_cells[i][j] = False
+
+        for i in range(8):
+            for j in range(8):
+                if (i, j) in points and i in range(8) and j in range(8):
+                    self.black_attacking_cells[i][j] = True
+
+    """_________________________________UTILITY FUNCTIONS_________________________________"""
+
     def resized(self,width,height):
         self.width = width
         self.height = height
@@ -85,14 +201,6 @@ class ChessBoard:
 
         self.b_dead_piece_surf_rect.centery = self.board_surf_rect.centery
         self.w_dead_piece_surf_rect.centery = self.board_surf_rect.centery
-
-    def _get_piece(self, piece, surface, center):
-        img = self.piece.get_piece(piece)
-        if img != None:
-            """ Getting Image of Piece and Displaying it in Current Box """
-            img_rect = img.get_rect()
-            img_rect.center = center
-            surface.blit(img, img_rect)
 
     def draw_board(self):
         # GREEN AND WHITE STRIP AROUND PLAYING REGION
@@ -162,67 +270,6 @@ class ChessBoard:
             else:
                 j -= 1
 
-    def _cell_coordinates_by_point(self,point):
-        X = self.width // 2 - 4 * self.box_size
-        Y = self.height // 2 - 4 * self.box_size
-        x = point[0] - X
-        y = point[1] - Y
-        cor_x,cor_y = None,None
-        for i in range(8):
-            if x in range(int(i*self.box_size),int((i+1)*self.box_size)):
-                cor_y = i
-                break
-        for i in range(8):
-            if y in range(int(i*self.box_size),int((i+1)*self.box_size)):
-                cor_x = i
-                break
-        return cor_x,cor_y
-
-    def _move_peice(self, move_from, move_to, player):
-
-        if self.grid[move_from[0]][move_from[1]]!=0:
-            temp_piece = self.grid[move_from[0]][move_from[1]]
-            # King's Move
-            if temp_piece[6:] == 'king' and temp_piece[:5] == player:
-                status = self.king_move(player, move_from, move_to)
-                self.move_from = self.move_to
-                self.move_to = []
-                return status
-            # Knight's Move
-            elif temp_piece[6:] == 'knight' and temp_piece[:5] == player:
-                status = self.knight_move(player, move_from, move_to)
-                self.move_from = self.move_to
-                self.move_to = []
-                return status
-            # Rook's Move
-            elif temp_piece[6:] == 'rook' and temp_piece[:5] == player:
-                status = self.rook_move(player, move_from, move_to)
-                self.move_from = self.move_to
-                self.move_to = []
-                return status
-            # Bishop's Move
-            elif temp_piece[6:] == 'bishop' and temp_piece[:5] == player:
-                status = self.bishop_move(player, move_from, move_to)
-                self.move_from = self.move_to
-                self.move_to = []
-                return status
-            # Queen's Move
-            elif temp_piece[6:] == 'queen' and temp_piece[:5] == player:
-                status = self.queen_move(player, move_from, move_to)
-                self.move_from = self.move_to
-                self.move_to = []
-                return status
-            # Pawn's Move
-            elif temp_piece[6:] == 'pawn' and temp_piece[:5] == player:
-                status = self.pawn_move(player, move_from, move_to)
-                self.move_from = self.move_to
-                self.move_to = []
-                return status
-
-        self.move_from = self.move_to
-        self.move_to = []
-        return False
-
     def _pawn_update_selector(self, player):
         self.draw_board()
         x_min, y_min = self.pawn_updater_position
@@ -275,139 +322,87 @@ class ChessBoard:
         response = [None, 'queen', 'rook', 'bishop', 'knight']
         return f'{player} {response[selected_piece]}'
 
-    def select_box(self,pos, selector,player):
-        x,y = self._cell_coordinates_by_point(pos)
-        name = ['', 'white', 'black']
-        if x != None and y != None:
-            if selector == 1:
-                self.move_from = [x, y]
-                self.move_to = []
-                self.pieces_under_attack = []
-                self.valid_moves = self.get_valid_moves(name[player], self.move_from)
+    def _box_over_layer(self, layer_surface, i, j, color, i_offset=0,j_offset=0):
+        d = 0
+        for k in range(255, -1, -255 // (self.box_size // 3)):
+            pygame.draw.rect(layer_surface, color + [k],
+                    (j_offset + j * self.box_size + d,i_offset + i * self.box_size + d, self.box_size - 2 * d, self.box_size - 2 * d),1)
+            d+=1
+
+    def _highlight_boxes(self, yellow_boxes, red_boxes):
+        highlight_color = [233,255,50]
+        alert_color = [233,0,0]
+
+        # yellow_boxes,red_boxes = [], []
+        # for i in range(8):
+        #     for j in range(8):
+        #         if self.white_attcking_cells[i][j]:
+        #             yellow_boxes.append((i,j))
+        #         if self.black_attcking_cells[i][j]:
+        #             red_boxes.append((i,j))
+
+
+        layer_surface = pygame.surface.Surface((int(self.box_size*8), int(self.box_size*8)), pygame.SRCALPHA)
+        for box in yellow_boxes:
+            i,j = box
+            self._box_over_layer(layer_surface, i, j, highlight_color)
+
+        for box in red_boxes:
+            i,j = box
+            self._box_over_layer(layer_surface, i, j, alert_color)
+
+        return layer_surface
+
+    """___________________________________________________________________________________"""
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    """_________________________________MOVEMENT FUNCTIONS________________________________"""
+
+    def _move_peice(self, move_from, move_to, player):
+        status = False
+
+        if self.grid[move_from[0]][move_from[1]]!=0:
+            temp_piece = self.grid[move_from[0]][move_from[1]]
+            # King's Move
+            if temp_piece[6:] == 'king' and temp_piece[:5] == player:
+                status = self.king_move(player, move_from, move_to)
+
+            # Knight's Move
+            elif temp_piece[6:] == 'knight' and temp_piece[:5] == player:
+                status = self.knight_move(player, move_from, move_to)
+
+            # Rook's Move
+            elif temp_piece[6:] == 'rook' and temp_piece[:5] == player:
+                status = self.rook_move(player, move_from, move_to)
+
+            # Bishop's Move
+            elif temp_piece[6:] == 'bishop' and temp_piece[:5] == player:
+                status = self.bishop_move(player, move_from, move_to)
+
+            # Queen's Move
+            elif temp_piece[6:] == 'queen' and temp_piece[:5] == player:
+                status = self.queen_move(player, move_from, move_to)
+
+            # Pawn's Move
+            elif temp_piece[6:] == 'pawn' and temp_piece[:5] == player:
+                status = self.pawn_move(player, move_from, move_to)
+
+        self.move_from = self.move_to
+        self.move_to = []
+        if status:
+            if player == 'white':
+                self._update_white_attack_positions()
             else:
-                self.move_to = [x, y]
-                status = self._move_peice(self.move_from,self.move_to, name[player])
-                if status:
-                    self.valid_moves = []
-                    self.pieces_under_attack = []
-                    return True, player*-1
-                else:
-                    self.valid_moves = self.get_valid_moves(name[player], self.move_from)
-                    return False, player
-            return True, player
-        else:
-            return False, player
+                self._update_black_attack_positions()
 
-    def king_move(self, player, move_from, move_to):
-        dist = (move_from[0]-move_to[0])**2 + (move_from[1]-move_to[1])**2
-        if dist<=3:
-            if player=='white':
-                if self.grid[move_to[0]][move_to[1]]==0:
-                    self.grid[move_to[0]][move_to[1]] = self.grid[move_from[0]][move_from[1]]
-                    self.grid[move_from[0]][move_from[1]] = 0
-                    return True
-                elif self.grid[move_to[0]][move_to[1]][:5]=='black':
-                    self.b_dead_pieces.append(self.grid[move_to[0]][move_to[1]])
-                    self.grid[move_to[0]][move_to[1]] = self.grid[move_from[0]][move_from[1]]
-                    self.grid[move_from[0]][move_from[1]] = 0
-                    return True
-            else:
-                if self.grid[move_to[0]][move_to[1]]==0:
-                    self.grid[move_to[0]][move_to[1]] = self.grid[move_from[0]][move_from[1]]
-                    self.grid[move_from[0]][move_from[1]] = 0
-                    return True
-                elif self.grid[move_to[0]][move_to[1]][:5]=='white':
-                    self.b_dead_pieces.append(self.grid[move_to[0]][move_to[1]])
-                    self.grid[move_to[0]][move_to[1]] = self.grid[move_from[0]][move_from[1]]
-                    self.grid[move_from[0]][move_from[1]] = 0
-                    return True
+        return status
 
-            return False
-
-        else:
-            if player=='white':
-                if not self.white_castle:
-                    return False
-                else:
-                    if move_from == [7,4]:
-                        if move_to == [7,2] and self.grid[7][0]=='white rook' and self.grid[7][1:4] == [0,0,0]:
-                            self.grid[7][0]=0
-                            self.grid[7][4]=0
-                            self.grid[7][2]='white king'
-                            self.grid[7][3]='white rook'
-                            self.white_castle=False
-                            return True
-                        elif move_to == [7,6] and self.grid[7][7]=='white rook' and self.grid[7][5:7] == [0,0]:
-                            self.grid[7][7] = 0
-                            self.grid[7][4] = 0
-                            self.grid[7][6] = 'white king'
-                            self.grid[7][5] = 'white rook'
-                            self.white_castle=False
-                            return True
-                        else:
-                            return False
-            else:
-                if not self.black_castle:
-                    return False
-                else:
-                    if move_from == [0,4]:
-                        if move_to == [0,2] and self.grid[0][0]=='black rook' and self.grid[0][1:4] == [0,0,0]:
-                            self.grid[0][0]=0
-                            self.grid[0][4]=0
-                            self.grid[0][2]='black king'
-                            self.grid[0][3]='black rook'
-                            self.black_castle=False
-                            return True
-                        elif move_to == [0,6] and self.grid[0][7]=='black rook' and self.grid[0][5:7] == [0,0]:
-                            self.grid[0][7] = 0
-                            self.grid[0][4] = 0
-                            self.grid[0][6] = 'black king'
-                            self.grid[0][5] = 'black rook'
-                            self.black_castle=False
-                            return True
-                        else:
-                            return False
-
-    def knight_move(self, player, move_from, move_to):
-        dist = (move_from[0]-move_to[0])**2 + (move_from[1]-move_to[1])**2
-        if dist==5:
-            if self.grid[move_to[0]][move_to[1]] == 0:
-                self.grid[move_to[0]][move_to[1]] = self.grid[move_from[0]][move_from[1]]
-                self.grid[move_from[0]][move_from[1]] = 0
-            elif self.grid[move_to[0]][move_to[1]][:5] != player:
-                if player=='white':
-                    self.b_dead_pieces.append(self.grid[move_to[0]][move_to[1]])
-                else:
-                    self.w_dead_pieces.append(self.grid[move_to[0]][move_to[1]])
-                self.grid[move_to[0]][move_to[1]] = self.grid[move_from[0]][move_from[1]]
-                self.grid[move_from[0]][move_from[1]] = 0
-            else:
-                return False
-            return True
-        else:
-            return False
-
-    def rook_move(self, player, move_from, move_to):
-        if move_from[0]==move_to[0]:
-            start = min(move_to[1], move_from[1])
-            end = max(move_to[1], move_from[1])
-            for i in range(1,end-start):
-                if self.grid[move_from[0]][start+i] != 0:
-                    return False
-
-        elif move_from[1]==move_to[1]:
-            start = min(move_to[0], move_from[0])
-            end = max(move_to[0], move_from[0])
-            for i in range(1,end-start):
-                if self.grid[start+i][move_from[1]] != 0:
-                    return False
-        else:
-            return False
-
-        if self.grid[move_to[0]][move_to[1]] == 0:
+    def movement_helper(self, player, valid_moves, killing_moves, move_from, move_to):
+        if tuple(move_to) in valid_moves:
             self.grid[move_to[0]][move_to[1]] = self.grid[move_from[0]][move_from[1]]
             self.grid[move_from[0]][move_from[1]] = 0
-        elif self.grid[move_to[0]][move_to[1]][:5] != player:
+        elif tuple(move_to) in killing_moves:
             if player == 'white':
                 self.b_dead_pieces.append(self.grid[move_to[0]][move_to[1]])
             else:
@@ -418,32 +413,139 @@ class ChessBoard:
             return False
         return True
 
-    def bishop_move(self, player, move_from, move_to):
-        x_disp = abs(move_from[0]-move_to[0])
-        y_disp = abs(move_from[1]-move_to[1])
+    def king_move(self, player, move_from, move_to):
+        valid_moves, killing_moves, garbage = self.get_king_moves(player, move_from[0], move_from[1])
 
-        x_flag = 1 if move_from[0]<move_to[0] else -1
-        y_flag = 1 if move_from[1] < move_to[1] else -1
+        if tuple(move_to) in valid_moves:
+            dist = (move_to[0]-move_from[0])**2 + (move_to[1]-move_from[1])**2
 
-        if abs(x_disp) == abs(y_disp):
-            for i in range(1,x_disp):
-                if self.grid[move_from[0] + x_flag*i][move_from[1] + y_flag*i] != 0:
-                    return False
-            if self.grid[move_to[0]][move_to[1]] == 0:
-                self.grid[move_to[0]][move_to[1]] = self.grid[move_from[0]][move_from[1]]
-                self.grid[move_from[0]][move_from[1]] = 0
-            elif self.grid[move_to[0]][move_to[1]][:5] != player:
-                if player == 'white':
-                    self.b_dead_pieces.append(self.grid[move_to[0]][move_to[1]])
+            # CASTLING HANDLING
+            if dist == 4:
+                if player=='white':
+                    if move_to == (7,2):
+                        self.grid[7][0] = 0
+                        self.grid[7][4]=0
+                        self.grid[7][2]='white king'
+                        self.grid[7][3]='white rook'
+                        self.white_castle=False
+                        return True
+                    else:
+                        self.grid[7][7] = 0
+                        self.grid[7][4] = 0
+                        self.grid[7][6] = 'white king'
+                        self.grid[7][5] = 'white rook'
+                        self.white_castle = False
+                        return True
                 else:
-                    self.w_dead_pieces.append(self.grid[move_to[0]][move_to[1]])
-                self.grid[move_to[0]][move_to[1]] = self.grid[move_from[0]][move_from[1]]
-                self.grid[move_from[0]][move_from[1]] = 0
+                    if move_to == (0,2):
+                        self.grid[0][0] = 0
+                        self.grid[0][4]=0
+                        self.grid[0][2]='black king'
+                        self.grid[0][3]='black rook'
+                        self.black_castle=False
+                        return True
+                    else:
+                        self.grid[0][7] = 0
+                        self.grid[0][4] = 0
+                        self.grid[0][6] = 'black king'
+                        self.grid[0][5] = 'black rook'
+                        self.black_castle = False
+                        return True
+
+            self.grid[move_to[0]][move_to[1]] = self.grid[move_from[0]][move_from[1]]
+            self.grid[move_from[0]][move_from[1]] = 0
+        elif tuple(move_to) in killing_moves:
+            if player == 'white':
+                self.b_dead_pieces.append(self.grid[move_to[0]][move_to[1]])
             else:
-                return False
-            return True
+                self.w_dead_pieces.append(self.grid[move_to[0]][move_to[1]])
+            self.grid[move_to[0]][move_to[1]] = self.grid[move_from[0]][move_from[1]]
+            self.grid[move_from[0]][move_from[1]] = 0
         else:
             return False
+        return True
+
+    # def king_move(self, player, move_from, move_to):
+    #     dist = (move_from[0]-move_to[0])**2 + (move_from[1]-move_to[1])**2
+    #     if dist<=3:
+    #         if player=='white':
+    #             if self.grid[move_to[0]][move_to[1]]==0:
+    #                 self.grid[move_to[0]][move_to[1]] = self.grid[move_from[0]][move_from[1]]
+    #                 self.grid[move_from[0]][move_from[1]] = 0
+    #                 return True
+    #             elif self.grid[move_to[0]][move_to[1]][:5]=='black':
+    #                 self.b_dead_pieces.append(self.grid[move_to[0]][move_to[1]])
+    #                 self.grid[move_to[0]][move_to[1]] = self.grid[move_from[0]][move_from[1]]
+    #                 self.grid[move_from[0]][move_from[1]] = 0
+    #                 return True
+    #         else:
+    #             if self.grid[move_to[0]][move_to[1]]==0:
+    #                 self.grid[move_to[0]][move_to[1]] = self.grid[move_from[0]][move_from[1]]
+    #                 self.grid[move_from[0]][move_from[1]] = 0
+    #                 return True
+    #             elif self.grid[move_to[0]][move_to[1]][:5]=='white':
+    #                 self.b_dead_pieces.append(self.grid[move_to[0]][move_to[1]])
+    #                 self.grid[move_to[0]][move_to[1]] = self.grid[move_from[0]][move_from[1]]
+    #                 self.grid[move_from[0]][move_from[1]] = 0
+    #                 return True
+    #
+    #         return False
+    #
+    #     else:
+    #         if player=='white':
+    #             if not self.white_castle:
+    #                 return False
+    #             else:
+    #                 if move_from == [7,4]:
+    #                     if move_to == [7,2] and self.grid[7][0]=='white rook' and self.grid[7][1:4] == [0,0,0]:
+    #                         self.grid[7][0]=0
+    #                         self.grid[7][4]=0
+    #                         self.grid[7][2]='white king'
+    #                         self.grid[7][3]='white rook'
+    #                         self.white_castle=False
+    #                         return True
+    #                     elif move_to == [7,6] and self.grid[7][7]=='white rook' and self.grid[7][5:7] == [0,0]:
+    #                         self.grid[7][7] = 0
+    #                         self.grid[7][4] = 0
+    #                         self.grid[7][6] = 'white king'
+    #                         self.grid[7][5] = 'white rook'
+    #                         self.white_castle=False
+    #                         return True
+    #                     else:
+    #                         return False
+    #         else:
+    #             if not self.black_castle:
+    #                 return False
+    #             else:
+    #                 if move_from == [0,4]:
+    #                     if move_to == [0,2] and self.grid[0][0]=='black rook' and self.grid[0][1:4] == [0,0,0]:
+    #                         self.grid[0][0]=0
+    #                         self.grid[0][4]=0
+    #                         self.grid[0][2]='black king'
+    #                         self.grid[0][3]='black rook'
+    #                         self.black_castle=False
+    #                         return True
+    #                     elif move_to == [0,6] and self.grid[0][7]=='black rook' and self.grid[0][5:7] == [0,0]:
+    #                         self.grid[0][7] = 0
+    #                         self.grid[0][4] = 0
+    #                         self.grid[0][6] = 'black king'
+    #                         self.grid[0][5] = 'black rook'
+    #                         self.black_castle=False
+    #                         return True
+    #                     else:
+    #                         return False
+
+    def knight_move(self, player, move_from, move_to):
+        valid_moves, killing_moves, garbage = self.get_knight_moves(player, move_from[0], move_from[1])
+        return self.movement_helper(player, valid_moves, killing_moves, move_from, move_to)
+
+    def rook_move(self, player, move_from, move_to):
+        valid_moves, killing_moves, garbage = self.get_rook_moves(player, move_from[0], move_from[1])
+        return self.movement_helper(player, valid_moves, killing_moves, move_from, move_to)
+
+    def bishop_move(self, player, move_from, move_to):
+        valid_moves, killing_moves, garbage = self.get_bishop_moves(player, move_from[0], move_from[1])
+        return self.movement_helper(player, valid_moves, killing_moves, move_from, move_to)
 
     def queen_move(self, player, move_from, move_to):
         return self.rook_move(player, move_from, move_to) or self.bishop_move(player, move_from, move_to)
@@ -489,32 +591,37 @@ class ChessBoard:
         else:
             return False
 
-    def _box_over_layer(self, layer_surface, i, j, color, i_offset=0,j_offset=0):
-        d = 0
-        for k in range(255, -1, -255 // (self.box_size // 3)):
-            pygame.draw.rect(layer_surface, color + [k],
-                             (j_offset + j * self.box_size + d,i_offset + i * self.box_size + d, self.box_size - 2 * d, self.box_size - 2 * d),
-                             1)
-            d+=1
+    """___________________________________________________________________________________"""
 
-    def _highlight_boxes(self, yellow_boxes, red_boxes):
-        highlight_color = [233,255,50]
-        alert_color = [233,0,0]
-        layer_surface = pygame.surface.Surface((int(self.box_size*8), int(self.box_size*8)), pygame.SRCALPHA)
-        for box in yellow_boxes:
-            i,j = box
-            self._box_over_layer(layer_surface, i, j, highlight_color)
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-        for box in red_boxes:
-            i,j = box
-            self._box_over_layer(layer_surface, i, j, alert_color)
-
-        return layer_surface
+    """________________________VALID MOVEMENT DETECTION FUNCTIONS_________________________"""
+    def select_box(self,pos, selector,player):
+        x,y = self._cell_coordinates_by_point(pos)
+        name = ['', 'white', 'black']
+        if x != None and y != None:
+            if selector == 1:
+                self.move_from = [x, y]
+                self.move_to = []
+                self.valid_moves, self.pieces_under_attack, garbage = self.get_valid_moves(name[player], self.move_from)
+            else:
+                self.move_to = [x, y]
+                status = self._move_peice(self.move_from,self.move_to, name[player])
+                if status:
+                    self.valid_moves = []
+                    self.pieces_under_attack = []
+                    return True, player*-1
+                else:
+                    self.valid_moves, self.pieces_under_attack, garbage = self.get_valid_moves(name[player], self.move_from)
+                    return False, player
+            return True, player
+        else:
+            return False, player
 
     def get_valid_moves(self, player, move_from):
         i,j = move_from
         if self.grid[i][j]==0 or self.grid[i][j][:5]!=player:
-            return []
+            return [],[],[]
 
         piece = self.grid[i][j][6:]
 
@@ -525,22 +632,30 @@ class ChessBoard:
         elif piece == 'bishop':
             return self.get_bishop_moves(player, i, j)
         elif piece == 'rook':
-            return self.get_rook_move(player, i, j)
+            return self.get_rook_moves(player, i, j)
         elif piece == 'queen':
-            return self.get_queen_move(player, i, j)
+            return self.get_queen_moves(player, i, j)
         elif piece == 'king':
             return self.get_king_moves(player, i, j)
-        return []
+        return [],[],[]
 
     def get_pawn_moves(self, player, i, j):
         moves = []
+        under_attack_moves = []
+        self_attack_moves = []
         if player == 'white':
             if j!=0:
-                if self.grid[i-1][j-1]!=0 and self.grid[i-1][j-1][:5]!=player:
-                    self.pieces_under_attack.append((i-1,j-1))
+                if self.grid[i-1][j-1]!=0:
+                    if self.grid[i-1][j-1][:5]!=player:
+                        under_attack_moves.append((i-1,j-1))
+                    elif self.grid[i-1][j-1][:5]==player:
+                        self_attack_moves.append((i-1,j-1))
             if j!=7:
-                if self.grid[i-1][j+1]!=0 and self.grid[i-1][j+1][:5]!=player:
-                    self.pieces_under_attack.append((i-1,j+1))
+                if self.grid[i-1][j+1]!=0:
+                    if self.grid[i-1][j+1][:5]!=player:
+                        under_attack_moves.append((i-1,j+1))
+                    elif self.grid[i-1][j+1][:5]==player:
+                        self_attack_moves.append((i-1,j+1))
 
             if self.grid[i-1][j]==0:
                 moves.append((i-1,j))
@@ -549,21 +664,29 @@ class ChessBoard:
 
         elif player == 'black':
             if j!=0:
-                if self.grid[i+1][j-1]!=0 and self.grid[i+1][j-1][:5]!=player:
-                    self.pieces_under_attack.append((i+1,j-1))
+                if self.grid[i+1][j-1]!=0:
+                    if self.grid[i+1][j-1][:5]!=player:
+                        under_attack_moves.append((i+1,j-1))
+                    elif self.grid[i+1][j-1][:5]==player:
+                        self_attack_moves.append((i+1,j-1))
             if j!=7:
-                if self.grid[i+1][j+1]!=0 and self.grid[i+1][j+1][:5]!=player:
-                    self.pieces_under_attack.append((i+1,j+1))
+                if self.grid[i+1][j+1]!=0:
+                    if self.grid[i+1][j+1][:5]!=player:
+                        under_attack_moves.append((i+1,j+1))
+                    elif self.grid[i+1][j+1][:5]==player:
+                        self_attack_moves.append((i+1,j+1))
 
             if self.grid[i+1][j]==0:
                 moves.append((i+1,j))
                 if i==1 and self.grid[i+2][j]==0:
                     moves.append((i+2,j))
 
-        return moves
+        return moves, under_attack_moves, self_attack_moves
 
     def get_knight_moves(self, player, i, j):
         moves = []
+        under_attack_moves = []
+        self_attack_moves = []
         temp_points = [
             (i-2, j-1),
             (i-2, j+1),
@@ -579,45 +702,84 @@ class ChessBoard:
                 if self.grid[point[0]][point[1]] == 0:
                     moves.append(point)
                 elif self.grid[point[0]][point[1]][:5]!=player:
-                    self.pieces_under_attack.append(point)
-        return moves
+                    under_attack_moves.append(point)
+                else:
+                    self_attack_moves.append(point)
+        return moves, under_attack_moves, self_attack_moves
 
     def _bishop_and_rook_move_helper(self, player, i, j, i_flag, j_flag):
         moves = []
+        under_attack_moves = []
+        self_attack_moves = []
         for k in range(1, 8):
             if i + i_flag*k in range(8) and j + j_flag*k in range(8):
                 if self.grid[i + i_flag*k][j + j_flag*k] == 0:
                     moves.append((i + i_flag*k, j + j_flag*k))
                 elif self.grid[i + i_flag*k][j + j_flag*k][:5] != player:
-                    self.pieces_under_attack.append((i + i_flag*k, j + j_flag*k))
+                    under_attack_moves.append((i + i_flag*k, j + j_flag*k))
                     break
                 else:
+                    self_attack_moves.append((i + i_flag*k, j + j_flag*k))
                     break
             else:
                 break
-        return moves
+        return moves,under_attack_moves,self_attack_moves
 
     def get_bishop_moves(self, player, i, j):
         moves = []
-        moves+=self._bishop_and_rook_move_helper(player, i, j, -1, -1)
-        moves+=self._bishop_and_rook_move_helper(player, i, j, -1, 1)
-        moves+=self._bishop_and_rook_move_helper(player, i, j, 1, -1)
-        moves+=self._bishop_and_rook_move_helper(player, i, j, 1, 1)
-        return moves
+        under_attack_moves = []
+        self_attack_moves = []
 
-    def get_rook_move(self, player, i, j):
+        m1,m2,m3=self._bishop_and_rook_move_helper(player, i, j, -1, -1)
+        moves+=m1
+        under_attack_moves+=m2
+        self_attack_moves+=m3
+        m1,m2,m3=self._bishop_and_rook_move_helper(player, i, j, -1, 1)
+        moves+=m1
+        under_attack_moves+=m2
+        self_attack_moves+=m3
+        m1,m2,m3=self._bishop_and_rook_move_helper(player, i, j, 1, -1)
+        moves+=m1
+        under_attack_moves+=m2
+        self_attack_moves+=m3
+        m1,m2,m3=self._bishop_and_rook_move_helper(player, i, j, 1, 1)
+        moves+=m1
+        under_attack_moves+=m2
+        self_attack_moves+=m3
+        return moves,under_attack_moves,self_attack_moves
+
+    def get_rook_moves(self, player, i, j):
         moves = []
-        moves += self._bishop_and_rook_move_helper(player, i, j, -1, 0)
-        moves += self._bishop_and_rook_move_helper(player, i, j, 1, 0)
-        moves += self._bishop_and_rook_move_helper(player, i, j, 0, -1)
-        moves += self._bishop_and_rook_move_helper(player, i, j, 0, 1)
-        return moves
+        under_attack_moves = []
+        self_attack_moves = []
 
-    def get_queen_move(self, player, i, j):
-        return self.get_bishop_moves(player, i, j) + self.get_rook_move(player, i, j)
+        m1,m2,m3 = self._bishop_and_rook_move_helper(player, i, j, -1, 0)
+        moves+=m1
+        under_attack_moves+=m2
+        self_attack_moves+=m3
+        m1,m2,m3 = self._bishop_and_rook_move_helper(player, i, j, 1, 0)
+        moves+=m1
+        under_attack_moves+=m2
+        self_attack_moves+=m3
+        m1,m2,m3 = self._bishop_and_rook_move_helper(player, i, j, 0, -1)
+        moves+=m1
+        under_attack_moves+=m2
+        self_attack_moves+=m3
+        m1,m2,m3 = self._bishop_and_rook_move_helper(player, i, j, 0, 1)
+        moves+=m1
+        under_attack_moves+=m2
+        self_attack_moves+=m3
+        return moves,under_attack_moves, self_attack_moves
+
+    def get_queen_moves(self, player, i, j):
+        m1,m2,m5 = self.get_bishop_moves(player, i, j)
+        m3,m4,m6 = self.get_rook_moves(player, i, j)
+        return m1+m3, m2+m4, m5+m6
 
     def get_king_moves(self, player, i, j):
         moves = []
+        under_attack_moves = []
+        self_attack_moves = []
         temp_points = [
             (i-1,j-1),
             (i-1,j),
@@ -631,23 +793,30 @@ class ChessBoard:
 
         for point in temp_points:
             if point[0] in range(0,8) and point[1] in range(0,8):
-                if self.grid[point[0]][point[1]] == 0:
-                    moves.append(point)
-                elif self.grid[point[0]][point[1]][:5]!=player:
-                    self.pieces_under_attack.append(point)
+                if (player=='black' and self.white_attacking_cells[point[0]][point[1]]) or (player == 'white' and self.black_attacking_cells[point[0]][point[1]]):
+                    pass
+                else:
+                    if self.grid[point[0]][point[1]] == 0:
+                        moves.append(point)
+                    elif self.grid[point[0]][point[1]][:5]!=player:
+                        under_attack_moves.append(point)
+                    else:
+                        self_attack_moves.append((point))
 
         if player == 'white':
             if self.white_castle:
                 if [i,j] == [7,4]:
-                    if self.grid[7][0] == 'white rook' and self.grid[7][1:4] == [0, 0, 0]:
+                    if self.grid[7][0] == 'white rook' and self.grid[7][1:4] == [0, 0, 0] and not self.black_attacking_cells[7][2]:
                         moves.append((7,2))
-                    elif self.grid[7][7] == 'white rook' and self.grid[7][5:7] == [0, 0]:
+                    elif self.grid[7][7] == 'white rook' and self.grid[7][5:7] == [0, 0] and not self.black_attacking_cells[7][6]:
                         moves.append((7,6))
         else:
             if self.black_castle:
                 if [i, j] == [0, 4]:
-                    if self.grid[0][0] == 'black rook' and self.grid[0][1:4] == [0, 0, 0]:
+                    if self.grid[0][0] == 'black rook' and self.grid[0][1:4] == [0, 0, 0] and not self.white_attacking_cells[0][2]:
                         moves.append((0, 2))
-                    elif self.grid[0][7] == 'black rook' and self.grid[0][5:7] == [0, 0]:
+                    elif self.grid[0][7] == 'black rook' and self.grid[0][5:7] == [0, 0] and not self.white_attacking_cells[0][6]:
                         moves.append((0, 6))
-        return moves
+        return moves, under_attack_moves, self_attack_moves
+
+    """___________________________________________________________________________________"""

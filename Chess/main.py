@@ -36,8 +36,14 @@ def key_down(event):
     if event.key == pygame.K_ESCAPE:
         sys.exit()
     elif event.key == pygame.K_p:
-        print(board.move_from)
-        print(board.move_to)
+        # print(board.move_from)
+        # print(board.move_to)
+        print("White's Attack")
+        for row in board.white_attacking_cells:
+            print(row)
+        print("Black's Attack")
+        for row in board.black_attacking_cells:
+            print(row)
 
 def mouse_click(event):
     global selector, player
